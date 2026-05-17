@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 const handlePrint = () => {
   const style = document.createElement("style");
@@ -139,6 +141,50 @@ const Divider = ({ color = "#F5C518" }: { color?: string }) => (
 
 export default function Index() {
   const [currentPage, setCurrentPage] = useState(0);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const printRootRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadPdf = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      const printRoot = document.getElementById("print-root");
+      if (!printRoot) return;
+
+      printRoot.style.display = "block";
+      printRoot.style.position = "fixed";
+      printRoot.style.left = "-9999px";
+      printRoot.style.top = "0";
+
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageEls = printRoot.querySelectorAll<HTMLElement>(".journal-page");
+
+      for (let i = 0; i < pageEls.length; i++) {
+        const el = pageEls[i];
+        const canvas = await html2canvas(el, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#FFFBEA",
+          width: 794,
+          height: 1123,
+        });
+        const imgData = canvas.toDataURL("image/jpeg", 0.92);
+        if (i > 0) pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);
+      }
+
+      printRoot.style.display = "none";
+      printRoot.style.position = "";
+      printRoot.style.left = "";
+      printRoot.style.top = "";
+
+      pdf.save('Миньоны_В_класса_2022-2026.pdf');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   const pages = [
     // ============ СТРАНИЦА 1 — ОБЛОЖКА ============
@@ -861,6 +907,24 @@ export default function Index() {
               boxShadow: "0 2px 10px rgba(245,197,24,0.4)",
             }}
           >🖨 Распечатать</button>
+
+          <button
+            onClick={handleDownloadPdf}
+            disabled={isGeneratingPdf}
+            style={{
+              background: isGeneratingPdf
+                ? "rgba(255,255,255,0.15)"
+                : "linear-gradient(135deg, #60B8E0, #2670A0)",
+              color: isGeneratingPdf ? "#888" : "white",
+              border: "none", borderRadius: 12, padding: "8px 18px",
+              fontFamily: "Nunito, sans-serif", fontSize: 15, fontWeight: 800,
+              cursor: isGeneratingPdf ? "default" : "pointer", transition: "all 0.2s",
+              boxShadow: isGeneratingPdf ? "none" : "0 2px 10px rgba(96,184,224,0.4)",
+              minWidth: 160,
+            }}
+          >
+            {isGeneratingPdf ? "⏳ Создаю PDF..." : "📥 Скачать PDF"}
+          </button>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
