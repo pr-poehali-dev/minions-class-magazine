@@ -1,5 +1,31 @@
 import { useState } from "react";
 
+const handlePrint = () => {
+  const style = document.createElement("style");
+  style.innerHTML = `
+    @media print {
+      @page { size: A4; margin: 0; }
+      body > * { display: none !important; }
+      #print-root { display: block !important; }
+      #print-root .journal-page {
+        width: 210mm;
+        min-height: 297mm;
+        page-break-after: always;
+        break-after: page;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+      }
+    }
+  `;
+  style.id = "print-style";
+  document.head.appendChild(style);
+  window.print();
+  setTimeout(() => {
+    const el = document.getElementById("print-style");
+    if (el) el.remove();
+  }, 1000);
+};
+
 const MINION_IMG = "https://cdn.poehali.dev/projects/4ab47706-7f9b-4757-94bf-a86b2d3f7574/files/0715fb77-d953-437f-9bcc-626611463b1e.jpg";
 const PATTERN_IMG = "https://cdn.poehali.dev/projects/4ab47706-7f9b-4757-94bf-a86b2d3f7574/files/fed835f0-7143-431a-b228-b2534f22fd7b.jpg";
 
@@ -825,6 +851,20 @@ export default function Index() {
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
+            onClick={handlePrint}
+            style={{
+              background: "linear-gradient(135deg, #F5C518, #FF9800)",
+              color: "#1a1a2e",
+              border: "none", borderRadius: 12, padding: "8px 18px",
+              fontFamily: "Nunito, sans-serif", fontSize: 15, fontWeight: 800,
+              cursor: "pointer", transition: "all 0.2s",
+              boxShadow: "0 2px 10px rgba(245,197,24,0.4)",
+            }}
+          >🖨 Распечатать</button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
             onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
             disabled={currentPage === 0}
             style={{
@@ -888,6 +928,13 @@ export default function Index() {
         fontFamily: "Caveat, cursive", fontSize: 13, color: "rgba(255,255,255,0.35)",
       }}>
         Кликните по номеру для быстрого перехода между страницами
+      </div>
+
+      {/* Скрытый блок для печати всех страниц */}
+      <div id="print-root" style={{ display: "none" }}>
+        {pages.map((page, i) => (
+          <div key={i} className="journal-page">{page}</div>
+        ))}
       </div>
     </div>
   );
